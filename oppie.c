@@ -28,6 +28,9 @@
 #define ST 3
 #define KL 4
 
+//Global variables
+int verbose = 0;
+
 //prototypes
 void cmd_loop(void);//main loop
 char *read_line(void);//reads the user input
@@ -59,6 +62,7 @@ int main(int argc, char **argv){
 
 //main looping function
 void cmd_loop(){
+	char *prompt="oppie> ";//prompt
 	char *line;//user input
 	char *argv[MAXARGS];//user args
 	int status=1;//return from execute
@@ -66,7 +70,7 @@ void cmd_loop(){
 
 	//busy loop
 	do{
-		printf("> ");//print the thing
+		printf("%s", prompt);//print the thing
 		fflush(stdout);
 
 		line = read_line();//read the line
@@ -168,7 +172,22 @@ int parseline(const char *cmdline, char **argv)
 *   
 */
 void eval(char **argv, int bg){
-	printf("Stuff was entered\n");
+	//vars
+	pid_t pid;//process id
+	sigset_t mask;//signal mask
+
+	//ignore empties
+	if(argv[0] == NULL) {
+		return;
+	}
+
+	//ignore singleton &
+	if(bg==-1){
+		//TODO ignore singleton
+		return;
+	}
+
+	//check for valid command
 
 	return;
 }
