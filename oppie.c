@@ -30,6 +30,7 @@
 
 //Global variables
 int verbose = 0;
+extern char **environ;//set by libc
 
 //job struct
 struct job_t {              /* The job struct */
@@ -47,8 +48,9 @@ struct job_t jobs[MAXJOBS]; /* The job list */
 void cmd_loop(void);//main loop
 char *read_line(void);//reads the user input
 int parseline(const char *cmdline, char **argv);
-void eval(char **argv, int bg);//evaluate input
-int is_builtin_cmd(char **argv);
+void eval(char **argv, int bg, char *line);//evaluate input
+int is_builtin_cmd(char **argv);//checks if command is a builtin command
+void fg_wait(pid_t pid);//makes the foreground wait for process
 
 /*
 * MAIN
@@ -85,7 +87,7 @@ void cmd_loop(){
 
 		line = read_line();//read the line
 		bg = parseline(line, argv);//parse
-		eval(argv, bg);//evaluate what to do
+		eval(argv, bg, line);//evaluate what to do
 
 		//free vars
 		//TODO
@@ -177,10 +179,10 @@ int parseline(const char *cmdline, char **argv)
 *   Takes: bg, 
 *
 */
-void eval(char **argv, int bg){
+void eval(char **argv, int bg, char *line){
 	//vars
 	pid_t pid;//process id
-	sigset_t mask, prev;//signal mask
+	sigset_t mask;//, prev;//signal mask
 
 	//ignore empties
 	if(argv[0] == NULL) {
@@ -203,8 +205,24 @@ void eval(char **argv, int bg){
 		//child
 		if((pid = fork()) == 0){
 			setpgid(0, 0);//sets current process gid to 0
+			sigprocmask(SIG_UNBLOCK, &mask, NULL);//unblocks SIGCHILD in child
+
+			//execute program or command
+			if(execve(argv[0], argv, environ) < 0 ){
+				printf("%s: command not found\n", argv[0]);
+				exit(0);
+			}
 		}
+
 		//parent
+		if(!bg){//foreground
+			//add job
+			sigprocmask(SIG_UNBLOCK, &mask, NULL);//unblock child
+			fg_wait(pid);//now wait for it to finish
+		} else {//background
+			sigprocmask(SIG_UNBLOCK, &mask, NULL);//unblock child
+			printf("[%d] (%d) %s", 1, 2, line);
+		}
 
 	}
 
@@ -246,4 +264,9 @@ int is_builtin_cmd(char **argv){
     }
 
     return 0;
+}
+
+void fg_wait(pid_t pid){
+	printf("FUcking kill me\n");
+	return;
 }
