@@ -31,13 +31,28 @@
 //Global variables
 int verbose = 0;
 
+//job struct
+struct job_t {              /* The job struct */
+    pid_t pid;              /* job PID */
+    int jid;                /* job ID [1, 2, ...] */
+    int state;              /* UNDEF, BG, FG, or ST */
+    char cmdline[MAXLINE];  /* command line */
+};
+struct job_t jobs[MAXJOBS]; /* The job list */
+//end globals
+
 //prototypes
+
+//the functions
 void cmd_loop(void);//main loop
 char *read_line(void);//reads the user input
 int parseline(const char *cmdline, char **argv);
 void eval(char **argv, int bg);//evaluate input
+int is_builtin_cmd(char **argv);
 
-//main
+/*
+* MAIN
+*/
 int main(int argc, char **argv){
 	//TODO: load config file if any
 
@@ -50,13 +65,8 @@ int main(int argc, char **argv){
 }
 
 /*
-*
-*
 *  
 *   implementation
-*
-*
-*
 *
 */  
 
@@ -163,18 +173,14 @@ int parseline(const char *cmdline, char **argv)
 }
 
 /*  
-*
-*
 *   Evaluate Command
 *   Takes: bg, 
 *
-*
-*   
 */
 void eval(char **argv, int bg){
 	//vars
 	pid_t pid;//process id
-	sigset_t mask;//signal mask
+	sigset_t mask, prev;//signal mask
 
 	//ignore empties
 	if(argv[0] == NULL) {
@@ -188,6 +194,56 @@ void eval(char **argv, int bg){
 	}
 
 	//check for valid command
+	if(!is_builtin_cmd(argv)){
+		//blocking sigchild
+		sigemptyset(&mask);//inits an empty set in mask
+		sigaddset(&mask, SIGCHLD);//adds sigchld to that set
+		sigprocmask(SIG_BLOCK, &mask, NULL);//block signals in mask (SIGCHLD)
+
+		//child
+		if((pid = fork()) == 0){
+			setpgid(0, 0);//sets current process gid to 0
+		}
+		//parent
+
+	}
 
 	return;
+}
+
+int is_builtin_cmd(char **argv){
+	//exit command
+	if (!strcmp(argv[0], "exit")) {
+		exit(0);
+        //do_exit();
+        return 1;
+    }
+    //jobs
+    else if (!strcmp(argv[0], "jobs")) {
+        //do_show_jobs();
+        return 1;
+    }
+    //bg
+    else if (!strcmp(argv[0], "bg")) {
+        //do_bgfg(argv);
+        return 1;
+    }
+    //fg
+    else if (!strcmp(argv[0], "fg")) {
+        //do_bgfg(argv);
+        return 1;
+    }
+    //killall
+    else if (!strcmp(argv[0], "killall")) {
+        //do_killall(argv);
+        return 1;
+    }
+
+    //term
+    else if(!strcmp(argv[0], "term")){
+    	//do_remove_terminated();
+    	return 1;
+    }
+
+    return 0;
 }
