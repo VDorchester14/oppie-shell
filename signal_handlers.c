@@ -4,19 +4,19 @@
 *  SIGNAL HANDLERS
 *
 */
-void sigint_handler(int){
+void sigint_handler(int sig){
 
 	return;
 }
-void sigchld_handler(int){
+void sigchld_handler(int sig){
 
 	return;
 }
-void sigstp_handler(int){
+void sigstp_handler(int sig){
 
 	return;
 }
-void sigalrm_handler(int){
-	
+void sigalrm_handler(int sig){
+
 	return;
 }

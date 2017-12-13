@@ -1,11 +1,10 @@
-CC = gcc
-CFLAGS = -Wall -g
-OBJ = oppie.o
+CC=gcc
+CFLAGS=-I.
+DEPS = signal_handlers.h
+OBJ = oppie.o signal_handlers.o 
 
-all: oppie
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 oppie: $(OBJ)
-	$(CC) $(CFLAGS) -o oppie $(OBJ)
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $<
+	gcc -o $@ $^ $(CFLAGS)
