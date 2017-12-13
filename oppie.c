@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "signal_handlers.h"
 
 //shell constants
 #define MAXLINE 1024//max line length
@@ -50,13 +51,20 @@ char *read_line(void);//reads the user input
 int parseline(const char *cmdline, char **argv);
 void eval(char **argv, int bg, char *line);//evaluate input
 int is_builtin_cmd(char **argv);//checks if command is a builtin command
-void fg_wait(pid_t pid);//makes the foreground wait for process
+void fg_wait(pid_t pid, sigset_t temp);//makes the foreground wait for process
+//
 
 /*
 * MAIN
 */
 int main(int argc, char **argv){
 	//TODO: load config file if any
+
+	//Install signal handlers
+	signal(SIGINT, sigint_handler);
+	signal(SIGCHLD, sigchld_handler);
+	signal(SIGSTOP, sigstp_handler);
+	signal(SIGALRM, sigalrm_handler);
 
 	//command loop
 	cmd_loop();
@@ -105,6 +113,9 @@ char *read_line(void){
 	char *line = NULL;//to store input
 	size_t bufsize = 0; //getline allocates a buffer
 	getline(&line, &bufsize, stdin);//size: bufsize from: stdin store: line
+	if (feof(stdin)) { /* End of file (ctrl-d) */
+	    fflush(stdout);
+	}
 	return line;//return it
 }
 
@@ -182,7 +193,7 @@ int parseline(const char *cmdline, char **argv)
 void eval(char **argv, int bg, char *line){
 	//vars
 	pid_t pid;//process id
-	sigset_t mask;//, prev;//signal mask
+	sigset_t mask, prev;//signal mask
 
 	//ignore empties
 	if(argv[0] == NULL) {
@@ -200,7 +211,7 @@ void eval(char **argv, int bg, char *line){
 		//blocking sigchild
 		sigemptyset(&mask);//inits an empty set in mask
 		sigaddset(&mask, SIGCHLD);//adds sigchld to that set
-		sigprocmask(SIG_BLOCK, &mask, NULL);//block signals in mask (SIGCHLD)
+		sigprocmask(SIG_BLOCK, &mask, &prev);//block signals in mask (SIGCHLD)
 
 		//child
 		if((pid = fork()) == 0){
@@ -218,7 +229,7 @@ void eval(char **argv, int bg, char *line){
 		if(!bg){//foreground
 			//add job
 			sigprocmask(SIG_UNBLOCK, &mask, NULL);//unblock child
-			fg_wait(pid);//now wait for it to finish
+			fg_wait(pid, prev);//now wait for it to finish
 		} else {//background
 			sigprocmask(SIG_UNBLOCK, &mask, NULL);//unblock child
 			printf("[%d] (%d) %s", 1, 2, line);
@@ -266,7 +277,13 @@ int is_builtin_cmd(char **argv){
     return 0;
 }
 
-void fg_wait(pid_t pid){
-	printf("FUcking kill me\n");
+void fg_wait(pid_t pid, sigset_t temp){
+	//wait for SIGCHILD
+	pid=0;
+	while(!pid){
+		sigsuspend(&temp);
+	}
+	//potentially unblock sigchild
+
 	return;
 }
