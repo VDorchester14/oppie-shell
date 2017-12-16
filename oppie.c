@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "signal_handlers.h"
+#include "job_manipulation.h"
 
 //shell constants
 #define MAXLINE 1024//max line length
@@ -31,6 +32,7 @@
 
 //Global variables
 int verbose = 0;
+int nextjid = 1;
 extern char **environ;//set by libc
 
 //job struct
@@ -65,6 +67,8 @@ int main(int argc, char **argv){
 	signal(SIGCHLD, sigchld_handler);
 	signal(SIGSTOP, sigstp_handler);
 	signal(SIGALRM, sigalrm_handler);
+
+	//Parse command line
 
 	//command loop
 	cmd_loop();
@@ -274,16 +278,38 @@ int is_builtin_cmd(char **argv){
     	return 1;
     }
 
+    //enable verbose
+    else if(!strcmp(argv[0], "enable_verbose")){
+    	verbose=1;
+    	if(verbose){printf("Verbose Enabled.\n");}
+    	return 1;
+    }
+
+    //disable verbose
+    else if(!strcmp(argv[0], "disable_verbose")){
+    	if(verbose){printf("Disabling Verbose.\n");}
+    	verbose=0;
+    	return 1;
+    }
+
     return 0;
 }
 
 void fg_wait(pid_t pid, sigset_t temp){
+	sigset_t mask;
+	
 	//wait for SIGCHILD
 	pid=0;
 	while(!pid){
-		sigsuspend(&temp);
+		pid=sigsuspend(&temp);
 	}
+
+	if(verbose){printf("sigsuspend ended\n");}
+
 	//potentially unblock sigchild
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGCHLD);
+	sigprocmask(SIG_UNBLOCK, &mask, NULL);
 
 	return;
 }
