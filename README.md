@@ -1,2 +1,2 @@
 # oppie-shell
-A linux shell written in c
+A linux shell written in C.
