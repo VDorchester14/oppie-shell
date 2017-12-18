@@ -1,6 +1,6 @@
 /* 
 *  AUTHOR: Vail Dorchester
-*  
+*  Description: A shell.
 *  
 *  
 *  
