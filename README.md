@@ -1,3 +1,1 @@
-A linux shell written in c. The end goal is to create my own linux kernel that uses this shell, build a small cluster of Raspberry Pi Zeros with a Raspberry Pi 3 as the head node, and then use that cluster to practice data mining.
-
-Update: Data mining on a cluster is inefficient, so this has turned into just a fun side project.
+The goal of this project is ultimately to learn signal processing and basic threading in C. Also it would be neat to have my own command line. Maybe I will eventually find a better use for this than just for fun and learning.
